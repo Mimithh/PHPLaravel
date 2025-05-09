@@ -1,0 +1,60 @@
+services:
+  #PHP - APACHE CONTAINER
+  apache:
+    image: php:8.2-apache
+    container_name: php-apache
+    ports:
+      - 5001:80
+    volumes:
+      - ./:/var/www/html  
+    networks:
+      - newTitans
+    depends_on:
+      - mysql
+    environment:
+    - APACHE_DOCUMENT_ROOT=/var/www/html #LARAVEL
+    working_dir: /var/www/html # Laravel trabaja desde la carpeta de 'Volumes'
+    command: >
+       bash -c "
+        apt update && apt install -y unzip curl apache2-utils &&
+        curl -sS https://getcomposer.org/installer | php &&
+        mv composer.phar /usr/local/bin/composer &&
+        docker-php-ext-install pdo pdo_mysql &&
+        a2enmod rewrite &&
+        sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/sites-available/000-default.conf &&
+        sed -i 's|AllowOverride None|AllowOverride All|g' /etc/apache2/apache2.conf &&
+        apache2-foreground"
+    
+  #MYSQL CONTAINER
+  mysql:
+    image: mysql:8.0
+    container_name: baseDatosNewTitans
+    ports:
+      - 3310:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: dataBaseNewTitans
+      MYSQL_USER: bernat
+      MYSQL_PASSWORD: newtitansdb
+    networks:
+      - newTitans
+    volumes:
+      - mysql_data:/var/lib/mysql
+  #PHPMYADMIN CONTAINER
+  phpmyadmin:
+    depends_on:
+      - mysql
+    image: phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: always
+    ports:
+      - 8025:80
+    environment:
+      PMA_HOST: baseDatosNewTitans
+    networks:
+      - newTitans
+
+networks:
+  newTitans:
+volumes:
+  mysql_data:
